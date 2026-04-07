@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>GiftCase Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- TON Connect UI -->
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        /* Баланс карточка */
+        .balance-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .balance-amount {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        
+        .case-price {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        /* Кейс */
+        .case-container {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+        
+        .case-container:active {
+            transform: scale(0.97);
+        }
+        
+        .case-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+        
+        /* Кнопки */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: var(--tg-theme-button-color, #2ea6ff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-weight: 500;
+        }
+        
+        .btn:active {
+            opacity: 0.8;
+        }
+        
+        .btn-secondary {
+            background: var(--tg-theme-secondary-bg-color, #e0e0e0);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        /* Модальное окно выбора подарка */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: var(--tg-theme-bg-color, white);
+            border-radius: 20px;
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .gift-item {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .gift-item:active {
+            background: var(--tg-theme-hint-color, #ccc);
+        }
+        
+        .gift-name {
+            font-weight: bold;
+        }
+        
+        .gift-price {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #666);
+        }
+        
+        .close-modal {
+            background: var(--tg-theme-button-color, #2ea6ff);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        /* Результат */
+        .result-message {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        /* Загрузка */
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--tg-theme-hint-color, #ccc);
+            border-top-color: var(--tg-theme-button-color, #2ea6ff);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* TON Connect кнопка */
+        .ton-connect-btn {
+            background: #0098ea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .ton-connect-btn:active {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="balance-card">
+            <div class="balance-label">💰 Твой баланс</div>
+            <div class="balance-amount" id="balance">--</div>
+            <div class="case-price">Кейс стоит <span id="casePrice">--</span> монет</div>
+        </div>
+        
+        <div class="case-container" id="caseBtn">
+            <div class="case-icon">🎁</div>
+            <div>Открыть кейс</div>
+        </div>
+        
+        <div class="buttons-grid">
+            <button class="btn" id="topupStarsBtn">⭐ Пополнить Stars</button>
+            <button class="btn" id="topupTonBtn">💎 Пополнить TON</button>
+            <button class="btn btn-secondary" id="statsBtn">📊 Статистика</button>
+            <button class="btn btn-secondary" id="connectWalletBtn">👛 TON кошелек</button>
+        </div>
+        
+        <div id="resultArea"></div>
+    </div>
+    
+    <!-- Модальное окно выбора подарка -->
+    <div class="modal" id="giftModal">
+        <div class="modal-content">
+            <div class="modal-header">🎁 Выбери подарок</div>
+            <div id="giftList"></div>
+            <button class="close-modal" onclick="closeGiftModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.hide();
+        
+        let currentUser = null;
+        let availableGifts = [];
+        
+        // Инициализация TON Connect
+        let tonConnectUI = null;
+        
+        function initTonConnect() {
+            if (typeof window.TonConnectUI !== 'undefined') {
+                tonConnectUI = new window.TonConnectUI({
+                    manifestUrl: 'https://your-domain.com/tonconnect-manifest.json',
+                    buttonRootId: 'ton-connect-button'
+                });
+                
+                tonConnectUI.onStatusChange((wallet) => {
+                    if (wallet) {
+                        const address = wallet.account.address;
+                        sendToBot('connect_ton_wallet', { wallet_address: address });
+                        tg.showPopup({
+                            title: '✅ Кошелек подключен',
+                            message: `Адрес: ${address.slice(0, 6)}...${address.slice(-4)}`,
+                            buttons: [{ type: 'ok' }]
+                        });
+                    }
+                });
+            }
+        }
+        
+        function sendToBot(action, data = {}) {
+            const payload = JSON.stringify({ action: action, ...data });
+            tg.sendData(payload);
+        }
+        
+        function showLoading(message = 'Загрузка...') {
+            document.getElementById('resultArea').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    ${message}
+                </div>
+            `;
+        }
+        
+        function hideLoading() {
+            // Очищается при следующем действии
+        }
+        
+        function showResult(title, message, isError = false) {
+            document.getElementById('resultArea').innerHTML = `
+                <div class="result-message" style="background: ${isError ? '#ffebee' : '#e8f5e9'}">
+                    <strong>${title}</strong><br>
+                    ${message}
+                </div>
+            `;
+            
+            // Авто-очистка через 5 секунд
+            setTimeout(() => {
+                const resultArea = document.getElementById('resultArea');
+                if (resultArea.innerHTML.includes(title)) {
+                    resultArea.innerHTML = '';
+                }
+            }, 5000);
+        }
+        
+        function updateBalanceUI(balance) {
+            document.getElementById('balance').innerText = balance;
+        }
+        
+        function showGiftSelection(gifts) {
+            availableGifts = gifts;
+            const giftListDiv = document.getElementById('giftList');
+            giftListDiv.innerHTML = '';
+            
+            gifts.forEach((gift, index) => {
+                const giftDiv = document.createElement('div');
+                giftDiv.className = 'gift-item';
+                giftDiv.onclick = () => selectGift(index);
+                giftDiv.innerHTML = `
+                    <div class="gift-name">${gift.name} | ${gift.model} | ${gift.backdrop}</div>
+                    <div class="gift-price">💰 ${gift.price} TON</div>
+                `;
+                giftListDiv.appendChild(giftDiv);
+            });
+            
+            document.getElementById('giftModal').style.display = 'flex';
+        }
+        
+        function closeGiftModal() {
+            document.getElementById('giftModal').style.display = 'none';
+        }
+        
+        function selectGift(index) {
+            const gift = availableGifts[index];
+            closeGiftModal();
+            
+            showLoading('Покупаем подарок...');
+            sendToBot('open_case', {
+                gift_type: gift.name,
+                gift_price: gift.price
+            });
+        }
+        
+        // Загрузка баланса при старте
+        function loadBalance() {
+            sendToBot('get_balance');
+        }
+        
+        // Загрузка статистики
+        function loadStats() {
+            showLoading('Загрузка статистики...');
+            sendToBot('get_stats');
+        }
+        
+        // Обработка ответов от бота
+        window.handleBotResponse = function(response) {
+            try {
+                const data = JSON.parse(response);
+                
+                switch(data.type) {
+                    case 'balance':
+                        updateBalanceUI(data.balance);
+                        document.getElementById('casePrice').innerText = data.case_price;
+                        break;
+                        
+                    case 'stats':
+                        hideLoading();
+                        tg.showPopup({
+                            title: '📊 Твоя статистика',
+                            message: `💰 Баланс: ${data.balance} монет\n🎁 Открыто кейсов: ${data.cases_opened}\n💎 Пополнено: ${data.total_deposited} монет\n👛 TON кошелек: ${data.ton_wallet ? '✅ привязан' : '❌ не привязан'}`,
+                            buttons: [{ type: 'ok' }]
+                        });
+                        break;
+                        
+                    case 'case_result':
+                        if (data.success) {
+                            updateBalanceUI(data.new_balance);
+                            showResult(
+                                '🎉 Поздравляем!',
+                                `Ты получил: ${data.gift_name}\n🎨 Модель: ${data.gift_model}\n🖼️ Фон: ${data.gift_backdrop}\n💰 Цена: ${data.gift_price} TON\n\nПодарок уже в твоем профиле Telegram!`
+                            );
+                        } else {
+                            showResult('❌ Ошибка', data.message, true);
+                        }
+                        break;
+                        
+                    case 'error':
+                        hideLoading();
+                        showResult('❌ Ошибка', data.message, true);
+                        break;
+                        
+                    case 'wallet_connected':
+                        if (data.success) {
+                            showResult('✅ Кошелек подключен', `Адрес: ${data.wallet.slice(0, 6)}...${data.wallet.slice(-4)}`);
+                        }
+                        break;
+                }
+            } catch(e) {
+                console.error('Ошибка обработки:', e);
+            }
+        };
+        
+        // Перехват сообщений от бота
+        const originalSendData = tg.sendData;
+        tg.sendData = function(data) {
+            // Сохраняем оригинальное поведение
+            originalSendData.call(tg, data);
+        };
+        
+        // Обработка входящих данных (бот отвечает через message.answer)
+        // Бот отправляет ответы как обычные сообщения, которые нужно парсить
+        tg.onEvent('viewportChanged', () => {});
+        
+        // Обработчики кнопок
+        document.getElementById('caseBtn').addEventListener('click', () => {
+            // Здесь должен быть запрос к боту за списком доступных подарков
+            // Для демонстрации показываем тестовые данные
+            showGiftSelection([
+                { name: 'dragon', model: 'Red Dragon', backdrop: 'Gold', price: 45 },
+                { name: 'dragon', model: 'Blue Dragon', backdrop: 'Silver', price: 38 },
+                { name: 'heroic helmet', model: 'Knight', backdrop: 'Gold', price: 52 }
+            ]);
+        });
+        
+        document.getElementById('topupStarsBtn').addEventListener('click', () => {
+            tg.showPopup({
+                title: '⭐ Пополнение Stars',
+                message: 'Выбери сумму:',
+                buttons: [
+                    { id: '5', type: 'default', text: '⭐ 5 Stars → 50 монет' },
+                    { id: '10', type: 'default', text: '⭐ 10 Stars → 100 монет' },
+                    { id: '20', type: 'default', text: '⭐ 20 Stars → 200 монет' },
+                    { id: 'cancel', type: 'cancel', text: 'Отмена' }
+                ]
+            }, (buttonId) => {
+                if (buttonId !== 'cancel') {
+                    sendToBot('topup_stars', { stars_amount: parseInt(buttonId) });
+                }
+            });
+        });
+        
+        document.getElementById('topupTonBtn').addEventListener('click', () => {
+            if (tonConnectUI) {
+                tonConnectUI.openModal();
+            } else {
+                tg.showPopup({
+                    title: '💎 Пополнение TON',
+                    message: 'TON Connect пока настраивается.\n\nАльтернатива: отправь TON на кошелек бота и напиши /deposit в чат.',
+                    buttons: [{ type: 'ok' }]
+                });
+            }
+        });
+        
+        document.getElementById('statsBtn').addEventListener('click', loadStats);
+        
+        document.getElementById('connectWalletBtn').addEventListener('click', () => {
+            if (tonConnectUI) {
+                tonConnectUI.openModal();
+            } else {
+                tg.showPopup({
+                    title: '👛 TON кошелек',
+                    message: 'Чтобы привязать кошелек, установи Tonkeeper и нажми "Подключить"',
+                    buttons: [{ type: 'ok' }]
+                });
+            }
+        });
+        
+        // Инициализация
+        initTonConnect();
+        loadBalance();
+        
+        tg.ready();
+    </script>
+</body>
+</html>

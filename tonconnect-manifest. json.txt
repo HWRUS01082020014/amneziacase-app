@@ -1,0 +1,7 @@
+{
+  "url": "https://github.com/HWRUS01082020014/amneziacase-app.git",
+  "name": "Amnezia case",
+  "iconUrl": "https://github.com/HWRUS01082020014/amneziacase-app.git/icon.png",
+  "termsOfUseUrl": "https://your-domain.com/terms",
+  "privacyPolicyUrl": "https://your-domain.com/privacy"
+}
