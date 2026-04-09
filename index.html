@@ -3,484 +3,778 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>GiftCase Mini App</title>
+    <title>AmneziaCase | TON кейсы</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- TON Connect UI -->
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(ellipse at 30% 10%, #1a0f2e 0%, #0a0a1a 100%);
             min-height: 100vh;
-            padding: 16px;
-        }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        /* Баланс карточка */
-        .balance-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
+            padding: 20px 16px 30px;
             color: white;
         }
-        
-        .balance-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .balance-amount {
-            font-size: 36px;
-            font-weight: bold;
-            margin: 8px 0;
-        }
-        
-        .case-price {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        
-        /* Кейс */
-        .case-container {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 20px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-bottom: 20px;
-        }
-        
-        .case-container:active {
-            transform: scale(0.97);
-        }
-        
-        .case-icon {
-            font-size: 64px;
-            margin-bottom: 15px;
-        }
-        
-        /* Кнопки */
-        .buttons-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .btn {
-            background: var(--tg-theme-button-color, #2ea6ff);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            font-weight: 500;
-        }
-        
-        .btn:active {
-            opacity: 0.8;
-        }
-        
-        .btn-secondary {
-            background: var(--tg-theme-secondary-bg-color, #e0e0e0);
-            color: var(--tg-theme-text-color, #000000);
-        }
-        
-        /* Модальное окно выбора подарка */
-        .modal {
-            display: none;
+
+        /* Анимированный фон */
+        .bg-glow {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-glow::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: -20%;
+            width: 140%;
+            height: 60%;
+            background: radial-gradient(ellipse, rgba(120, 80, 200, 0.15), transparent);
+            filter: blur(60px);
+            animation: float 8s ease-in-out infinite;
+        }
+        .bg-glow::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            right: -20%;
+            width: 140%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(255, 100, 150, 0.1), transparent);
+            filter: blur(60px);
+            animation: float 10s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 5%) scale(1.05); }
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Баланс карточка */
+        .balance-card {
+            background: rgba(20, 15, 40, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .balance-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .balance-label {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+        }
+        .balance-amount {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .balance-sub {
+            font-size: 12px;
+            opacity: 0.5;
+        }
+        .wallet-icon {
+            background: rgba(255, 215, 0, 0.15);
+            border-radius: 40px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        .wallet-icon:active {
+            transform: scale(0.96);
+            background: rgba(255, 215, 0, 0.25);
+        }
+
+        /* Табы */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: rgba(10, 8, 20, 0.5);
+            padding: 6px;
+            border-radius: 60px;
+            backdrop-filter: blur(8px);
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #1a0f2e;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        /* Кейсы сетка */
+        .cases-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .case-card {
+            background: linear-gradient(135deg, rgba(30, 25, 55, 0.8), rgba(20, 15, 40, 0.9));
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        .case-card:active::before {
+            left: 100%;
+        }
+        .case-card:active {
+            transform: scale(0.98);
+        }
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .case-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .case-price {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a0f2e;
+        }
+        .case-gifts {
+            display: flex;
+            gap: 8px;
+            font-size: 20px;
+            opacity: 0.7;
+        }
+        .case-gifts span {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 10px;
+            border-radius: 40px;
+            font-size: 16px;
+        }
+
+        /* Инвентарь */
+        .inventory-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .inventory-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        .inventory-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .inventory-grid::-webkit-scrollbar-thumb {
+            background: #FFD700;
+            border-radius: 10px;
+        }
+        .inventory-item {
+            background: rgba(30, 25, 55, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            transition: 0.2s;
+        }
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .item-emoji {
+            font-size: 40px;
+            background: rgba(255, 215, 0, 0.1);
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+        }
+        .item-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .item-price {
+            font-size: 13px;
+            color: #FFD700;
+        }
+        .item-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .sell-btn, .withdraw-btn {
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .sell-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+        .withdraw-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+        .sell-btn:active, .withdraw-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Кнопки пополнения */
+        .deposit-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .deposit-btn {
+            flex: 1;
+            min-width: 70px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 14px 0;
+            border-radius: 40px;
+            text-align: center;
+            font-weight: 700;
+            color: #FFD700;
+            cursor: pointer;
+            transition: 0.1s;
+            backdrop-filter: blur(4px);
+        }
+        .deposit-btn:active {
+            transform: scale(0.96);
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        /* Анимация кручения */
+        .spin-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
             z-index: 1000;
+            display: flex;
             justify-content: center;
             align-items: center;
         }
-        
-        .modal-content {
-            background: var(--tg-theme-bg-color, white);
-            border-radius: 20px;
-            padding: 20px;
-            width: 90%;
-            max-width: 350px;
-            max-height: 80%;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
+        .spin-box {
             text-align: center;
+            animation: fadeInUp 0.3s ease;
         }
-        
-        .gift-item {
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
+        .spin-icon {
+            font-size: 100px;
+            animation: spin 0.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            filter: drop-shadow(0 0 20px #FFD700);
+        }
+        .spin-text {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFD700;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Модалка результата */
+        .result-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1e1a3a, #120c28);
+            border-radius: 40px;
+            padding: 32px 24px;
+            text-align: center;
+            z-index: 1001;
+            width: 85%;
+            max-width: 320px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            animation: pop 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+        @keyframes pop {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        .result-emoji {
+            font-size: 70px;
+            margin: 10px 0;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+        .result-name {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 12px 0 8px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .result-price {
+            font-size: 16px;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        .result-btn {
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 14px 20px;
+            border-radius: 60px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .gift-item:active {
-            background: var(--tg-theme-hint-color, #ccc);
-        }
-        
-        .gift-name {
-            font-weight: bold;
-        }
-        
-        .gift-price {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color, #666);
-        }
-        
-        .close-modal {
-            background: var(--tg-theme-button-color, #2ea6ff);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
             width: 100%;
             margin-top: 10px;
-            cursor: pointer;
-        }
-        
-        /* Результат */
-        .result-message {
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        /* Загрузка */
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--tg-theme-hint-color, #ccc);
-            border-top-color: var(--tg-theme-button-color, #2ea6ff);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* TON Connect кнопка */
-        .ton-connect-btn {
-            background: #0098ea;
+            transition: 0.1s;
             color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
-            width: 100%;
-            margin-bottom: 10px;
-            cursor: pointer;
-            font-weight: 500;
+            font-size: 16px;
         }
-        
-        .ton-connect-btn:active {
-            opacity: 0.8;
+        .result-btn:active {
+            transform: scale(0.97);
+            background: rgba(255, 215, 0, 0.25);
+        }
+        .result-btn.sell {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            border: none;
+        }
+        .result-btn.withdraw {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            border: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Тосты */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #1a0f2e;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            z-index: 1002;
+            animation: slideUp 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .empty-inventory {
+            text-align: center;
+            padding: 50px 20px;
+            opacity: 0.5;
+        }
+        .empty-inventory span {
+            font-size: 50px;
+            display: block;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <div class="balance-card">
-            <div class="balance-label">💰 Твой баланс</div>
-            <div class="balance-amount" id="balance">--</div>
-            <div class="case-price">Кейс стоит <span id="casePrice">--</span> монет</div>
+<div class="bg-glow"></div>
+<div class="container">
+    <div class="balance-card">
+        <div class="balance-info">
+            <div class="balance-label">💰 TON BALANCE</div>
+            <div class="balance-amount" id="balance">0</div>
+            <div class="balance-sub">доступно для кейсов</div>
         </div>
-        
-        <div class="case-container" id="caseBtn">
-            <div class="case-icon">🎁</div>
-            <div>Открыть кейс</div>
-        </div>
-        
-        <div class="buttons-grid">
-            <button class="btn" id="topupStarsBtn">⭐ Пополнить Stars</button>
-            <button class="btn" id="topupTonBtn">💎 Пополнить TON</button>
-            <button class="btn btn-secondary" id="statsBtn">📊 Статистика</button>
-            <button class="btn btn-secondary" id="connectWalletBtn">👛 TON кошелек</button>
-        </div>
-        
-        <div id="resultArea"></div>
-    </div>
-    
-    <!-- Модальное окно выбора подарка -->
-    <div class="modal" id="giftModal">
-        <div class="modal-content">
-            <div class="modal-header">🎁 Выбери подарок</div>
-            <div id="giftList"></div>
-            <button class="close-modal" onclick="closeGiftModal()">Закрыть</button>
+        <div class="wallet-icon" id="connectWalletBtn">
+            <span>👛</span>
+            <span>Кошелек</span>
         </div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.MainButton.hide();
-        
-        let currentUser = null;
-        let availableGifts = [];
-        
-        // Инициализация TON Connect
-        let tonConnectUI = null;
-        
-        function initTonConnect() {
-            if (typeof window.TonConnectUI !== 'undefined') {
-                tonConnectUI = new window.TonConnectUI({
-                    manifestUrl: 'https://your-domain.com/tonconnect-manifest.json',
-                    buttonRootId: 'ton-connect-button'
-                });
-                
-                tonConnectUI.onStatusChange((wallet) => {
-                    if (wallet) {
-                        const address = wallet.account.address;
-                        sendToBot('connect_ton_wallet', { wallet_address: address });
-                        tg.showPopup({
-                            title: '✅ Кошелек подключен',
-                            message: `Адрес: ${address.slice(0, 6)}...${address.slice(-4)}`,
-                            buttons: [{ type: 'ok' }]
-                        });
+    <div class="tabs">
+        <div class="tab active" id="tabCases">🎲 КЕЙСЫ</div>
+        <div class="tab" id="tabInventory">🎁 ИНВЕНТАРЬ</div>
+    </div>
+
+    <div id="casesPanel" class="cases-grid"></div>
+    <div id="inventoryPanel" class="inventory-grid hidden"></div>
+
+    <div class="deposit-buttons" id="depositPanel">
+        <div class="deposit-btn" data-amount="1">+1 TON</div>
+        <div class="deposit-btn" data-amount="5">+5 TON</div>
+        <div class="deposit-btn" data-amount="10">+10 TON</div>
+        <div class="deposit-btn" data-amount="25">+25 TON</div>
+    </div>
+</div>
+
+<div id="spinOverlay" class="spin-overlay hidden">
+    <div class="spin-box">
+        <div class="spin-icon">🎰</div>
+        <div class="spin-text">КРУТИМ КЕЙС...</div>
+    </div>
+</div>
+
+<div id="resultModal" class="result-modal hidden">
+    <div id="resultEmoji" class="result-emoji">🎁</div>
+    <div id="resultName" class="result-name"></div>
+    <div id="resultPrice" class="result-price"></div>
+    <button class="result-btn sell" id="resultSellBtn">💰 Продать за TON</button>
+    <button class="result-btn withdraw" id="resultWithdrawBtn">💎 Вывести NFT</button>
+    <button class="result-btn" id="resultCloseBtn">Закрыть</button>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.ready();
+
+    let currentGift = null;
+    let cases = [];
+    let inventory = [];
+
+    function sendToBot(action, data = {}) {
+        tg.sendData(JSON.stringify({ action, ...data }));
+    }
+
+    function showToast(msg) {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showLoading() {
+        document.getElementById('spinOverlay').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        document.getElementById('spinOverlay').classList.add('hidden');
+    }
+
+    function showResult(gift) {
+        currentGift = gift;
+        document.getElementById('resultEmoji').textContent = gift.emoji;
+        document.getElementById('resultName').textContent = gift.name.toUpperCase();
+        document.getElementById('resultPrice').innerHTML = `💰 Рыночная цена: ${gift.price} TON`;
+        document.getElementById('resultModal').classList.remove('hidden');
+    }
+
+    function closeResult() {
+        document.getElementById('resultModal').classList.add('hidden');
+        currentGift = null;
+        loadData();
+    }
+
+    function updateBalanceUI(balance) {
+        document.getElementById('balance').textContent = balance;
+    }
+
+    function renderCases() {
+        const container = document.getElementById('casesPanel');
+        container.innerHTML = '';
+        cases.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'case-card';
+            card.onclick = () => spinCase(c.id);
+            const giftsPreview = c.gifts.map(g => `<span>${g.emoji}</span>`).join('');
+            card.innerHTML = `
+                <div class="case-header">
+                    <span class="case-name">${c.emoji} ${c.name}</span>
+                    <span class="case-price">💎 ${c.price_ton} TON</span>
+                </div>
+                <div class="case-gifts">${giftsPreview}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderInventory() {
+        const container = document.getElementById('inventoryPanel');
+        if (!inventory.length) {
+            container.innerHTML = '<div class="empty-inventory"><span>🎁</span><br/>У тебя пока нет подарков<br/><span style="font-size:14px;">Крути кейсы!</span></div>';
+            return;
+        }
+        container.innerHTML = '';
+        inventory.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'inventory-item';
+            div.innerHTML = `
+                <div class="item-info">
+                    <div class="item-emoji">${item.emoji}</div>
+                    <div>
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-price">💰 ${item.price} TON</div>
+                    </div>
+                </div>
+                <div class="item-buttons">
+                    <button class="sell-btn" data-id="${item.id}">Продать</button>
+                    <button class="withdraw-btn" data-id="${item.id}">Вывести</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        document.querySelectorAll('.sell-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                sellGift(parseInt(btn.dataset.id));
+            };
+        });
+        document.querySelectorAll('.withdraw-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                withdrawGift(parseInt(btn.dataset.id));
+            };
+        });
+    }
+
+    function spinCase(caseId) {
+        showLoading();
+        sendToBot('spin_case', { case_id: caseId });
+    }
+
+    function sellGift(itemId) {
+        sendToBot('sell_gift', { item_id: itemId });
+    }
+
+    function withdrawGift(itemId) {
+        sendToBot('withdraw_gift', { item_id: itemId });
+    }
+
+    function loadData() {
+        sendToBot('get_data');
+    }
+
+    function handleResponse(response) {
+        try {
+            const data = JSON.parse(response);
+
+            switch (data.type) {
+                case 'user_data':
+                    updateBalanceUI(data.balance);
+                    cases = data.cases;
+                    inventory = data.inventory;
+                    renderCases();
+                    renderInventory();
+                    break;
+
+                case 'spin_result':
+                    hideLoading();
+                    if (data.success) {
+                        showResult(data.gift);
+                        updateBalanceUI(data.new_balance);
+                    } else {
+                        showToast(data.message);
                     }
-                });
+                    break;
+
+                case 'sell_result':
+                    if (data.success) {
+                        showToast(`💰 Подарок продан за ${data.amount} TON`);
+                        updateBalanceUI(data.new_balance);
+                        loadData();
+                    } else {
+                        showToast('Ошибка продажи');
+                    }
+                    break;
+
+                case 'withdraw_result':
+                    if (data.success) {
+                        showToast(`✅ Подарок ${data.gift_name} (${data.model} ${data.backdrop}) отправлен в профиль!`);
+                        loadData();
+                        closeResult();
+                    } else {
+                        showToast(data.message);
+                    }
+                    break;
+
+                case 'deposit_request':
+                    tg.showPopup({
+                        title: '💎 ПОПОЛНЕНИЕ TON',
+                        message: `Отправь ${data.amount} TON на кошелек:\n${data.wallet}\n\nОБЯЗАТЕЛЬНО укажи комментарий:\n${data.comment}`,
+                        buttons: [{ id: 'check', type: 'default', text: '✅ Проверить' }, { id: 'cancel', type: 'cancel', text: 'Отмена' }]
+                    }, (btn) => {
+                        if (btn === 'check') sendToBot('check_deposit', { transaction_id: data.transaction_id });
+                    });
+                    break;
+
+                case 'deposit_confirmed':
+                    if (data.success) {
+                        showToast(`✅ Пополнено ${data.amount} TON`);
+                        updateBalanceUI(data.new_balance);
+                        loadData();
+                    } else {
+                        showToast(data.message);
+                    }
+                    break;
+
+                case 'wallet_connected':
+                    showToast('✅ TON кошелек привязан!');
+                    break;
+
+                case 'error':
+                    hideLoading();
+                    showToast(data.message);
+                    break;
             }
+        } catch (e) {
+            console.error('Ошибка:', e);
         }
-        
-        function sendToBot(action, data = {}) {
-            const payload = JSON.stringify({ action: action, ...data });
-            tg.sendData(payload);
-        }
-        
-        function showLoading(message = 'Загрузка...') {
-            document.getElementById('resultArea').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    ${message}
-                </div>
-            `;
-        }
-        
-        function hideLoading() {
-            // Очищается при следующем действии
-        }
-        
-        function showResult(title, message, isError = false) {
-            document.getElementById('resultArea').innerHTML = `
-                <div class="result-message" style="background: ${isError ? '#ffebee' : '#e8f5e9'}">
-                    <strong>${title}</strong><br>
-                    ${message}
-                </div>
-            `;
-            
-            // Авто-очистка через 5 секунд
-            setTimeout(() => {
-                const resultArea = document.getElementById('resultArea');
-                if (resultArea.innerHTML.includes(title)) {
-                    resultArea.innerHTML = '';
-                }
-            }, 5000);
-        }
-        
-        function updateBalanceUI(balance) {
-            document.getElementById('balance').innerText = balance;
-        }
-        
-        function showGiftSelection(gifts) {
-            availableGifts = gifts;
-            const giftListDiv = document.getElementById('giftList');
-            giftListDiv.innerHTML = '';
-            
-            gifts.forEach((gift, index) => {
-                const giftDiv = document.createElement('div');
-                giftDiv.className = 'gift-item';
-                giftDiv.onclick = () => selectGift(index);
-                giftDiv.innerHTML = `
-                    <div class="gift-name">${gift.name} | ${gift.model} | ${gift.backdrop}</div>
-                    <div class="gift-price">💰 ${gift.price} TON</div>
-                `;
-                giftListDiv.appendChild(giftDiv);
-            });
-            
-            document.getElementById('giftModal').style.display = 'flex';
-        }
-        
-        function closeGiftModal() {
-            document.getElementById('giftModal').style.display = 'none';
-        }
-        
-        function selectGift(index) {
-            const gift = availableGifts[index];
-            closeGiftModal();
-            
-            showLoading('Покупаем подарок...');
-            sendToBot('open_case', {
-                gift_type: gift.name,
-                gift_price: gift.price
-            });
-        }
-        
-        // Загрузка баланса при старте
-        function loadBalance() {
-            sendToBot('get_balance');
-        }
-        
-        // Загрузка статистики
-        function loadStats() {
-            showLoading('Загрузка статистики...');
-            sendToBot('get_stats');
-        }
-        
-        // Обработка ответов от бота
-        window.handleBotResponse = function(response) {
-            try {
-                const data = JSON.parse(response);
-                
-                switch(data.type) {
-                    case 'balance':
-                        updateBalanceUI(data.balance);
-                        document.getElementById('casePrice').innerText = data.case_price;
-                        break;
-                        
-                    case 'stats':
-                        hideLoading();
-                        tg.showPopup({
-                            title: '📊 Твоя статистика',
-                            message: `💰 Баланс: ${data.balance} монет\n🎁 Открыто кейсов: ${data.cases_opened}\n💎 Пополнено: ${data.total_deposited} монет\n👛 TON кошелек: ${data.ton_wallet ? '✅ привязан' : '❌ не привязан'}`,
-                            buttons: [{ type: 'ok' }]
-                        });
-                        break;
-                        
-                    case 'case_result':
-                        if (data.success) {
-                            updateBalanceUI(data.new_balance);
-                            showResult(
-                                '🎉 Поздравляем!',
-                                `Ты получил: ${data.gift_name}\n🎨 Модель: ${data.gift_model}\n🖼️ Фон: ${data.gift_backdrop}\n💰 Цена: ${data.gift_price} TON\n\nПодарок уже в твоем профиле Telegram!`
-                            );
-                        } else {
-                            showResult('❌ Ошибка', data.message, true);
-                        }
-                        break;
-                        
-                    case 'error':
-                        hideLoading();
-                        showResult('❌ Ошибка', data.message, true);
-                        break;
-                        
-                    case 'wallet_connected':
-                        if (data.success) {
-                            showResult('✅ Кошелек подключен', `Адрес: ${data.wallet.slice(0, 6)}...${data.wallet.slice(-4)}`);
-                        }
-                        break;
-                }
-            } catch(e) {
-                console.error('Ошибка обработки:', e);
-            }
-        };
-        
-        // Перехват сообщений от бота
-        const originalSendData = tg.sendData;
-        tg.sendData = function(data) {
-            // Сохраняем оригинальное поведение
-            originalSendData.call(tg, data);
-        };
-        
-        // Обработка входящих данных (бот отвечает через message.answer)
-        // Бот отправляет ответы как обычные сообщения, которые нужно парсить
-        tg.onEvent('viewportChanged', () => {});
-        
-        // Обработчики кнопок
-        document.getElementById('caseBtn').addEventListener('click', () => {
-            // Здесь должен быть запрос к боту за списком доступных подарков
-            // Для демонстрации показываем тестовые данные
-            showGiftSelection([
-                { name: 'dragon', model: 'Red Dragon', backdrop: 'Gold', price: 45 },
-                { name: 'dragon', model: 'Blue Dragon', backdrop: 'Silver', price: 38 },
-                { name: 'heroic helmet', model: 'Knight', backdrop: 'Gold', price: 52 }
-            ]);
-        });
-        
-        document.getElementById('topupStarsBtn').addEventListener('click', () => {
-            tg.showPopup({
-                title: '⭐ Пополнение Stars',
-                message: 'Выбери сумму:',
-                buttons: [
-                    { id: '5', type: 'default', text: '⭐ 5 Stars → 50 монет' },
-                    { id: '10', type: 'default', text: '⭐ 10 Stars → 100 монет' },
-                    { id: '20', type: 'default', text: '⭐ 20 Stars → 200 монет' },
-                    { id: 'cancel', type: 'cancel', text: 'Отмена' }
-                ]
-            }, (buttonId) => {
-                if (buttonId !== 'cancel') {
-                    sendToBot('topup_stars', { stars_amount: parseInt(buttonId) });
-                }
-            });
-        });
-        
-        document.getElementById('topupTonBtn').addEventListener('click', () => {
-            if (tonConnectUI) {
-                tonConnectUI.openModal();
-            } else {
-                tg.showPopup({
-                    title: '💎 Пополнение TON',
-                    message: 'TON Connect пока настраивается.\n\nАльтернатива: отправь TON на кошелек бота и напиши /deposit в чат.',
-                    buttons: [{ type: 'ok' }]
-                });
-            }
-        });
-        
-        document.getElementById('statsBtn').addEventListener('click', loadStats);
-        
-        document.getElementById('connectWalletBtn').addEventListener('click', () => {
-            if (tonConnectUI) {
-                tonConnectUI.openModal();
-            } else {
-                tg.showPopup({
-                    title: '👛 TON кошелек',
-                    message: 'Чтобы привязать кошелек, установи Tonkeeper и нажми "Подключить"',
-                    buttons: [{ type: 'ok' }]
-                });
-            }
-        });
-        
-        // Инициализация
-        initTonConnect();
-        loadBalance();
-        
-        tg.ready();
-    </script>
+    }
+
+    // Перехват ответов
+    const originalSendData = tg.sendData;
+    tg.sendData = function (data) {
+        originalSendData.call(tg, data);
+    };
+
+    // Обработчики
+    document.getElementById('tabCases').onclick = () => {
+        document.getElementById('tabCases').classList.add('active');
+        document.getElementById('tabInventory').classList.remove('active');
+        document.getElementById('casesPanel').classList.remove('hidden');
+        document.getElementById('inventoryPanel').classList.add('hidden');
+    };
+    document.getElementById('tabInventory').onclick = () => {
+        document.getElementById('tabInventory').classList.add('active');
+        document.getElementById('tabCases').classList.remove('active');
+        document.getElementById('inventoryPanel').classList.remove('hidden');
+        document.getElementById('casesPanel').classList.add('hidden');
+        loadData();
+    };
+
+    document.querySelectorAll('.deposit-btn').forEach(btn => {
+        btn.onclick = () => sendToBot('request_deposit', { amount: parseFloat(btn.dataset.amount) });
+    });
+
+    document.getElementById('connectWalletBtn').onclick = () => {
+        sendToBot('get_data');
+        showToast('👛 Отправь адрес TON кошелька в чат с ботом');
+    };
+
+    document.getElementById('resultSellBtn').onclick = () => {
+        if (currentGift) sellGift(currentGift.id);
+        closeResult();
+    };
+    document.getElementById('resultWithdrawBtn').onclick = () => {
+        if (currentGift) withdrawGift(currentGift.id);
+        closeResult();
+    };
+    document.getElementById('resultCloseBtn').onclick = closeResult;
+
+    loadData();
+</script>
 </body>
 </html>
